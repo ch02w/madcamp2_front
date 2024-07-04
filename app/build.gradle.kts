@@ -33,6 +33,7 @@ android {
 
 dependencies {
 
+    implementation("com.kakao.sdk:v2-user:2.20.3")
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
@@ -40,4 +41,5 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+
 }
