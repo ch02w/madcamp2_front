@@ -1,77 +1,79 @@
-package com.example.fridge;
+package com.example.fridge
 
-import android.app.Application;
-import androidx.lifecycle.AndroidViewModel;
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
-import com.kakao.sdk.auth.model.OAuthToken;
-import com.kakao.sdk.user.UserApiClient;
-import com.kakao.sdk.user.model.User;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
+import android.app.Application
+import android.content.Context
+import android.content.SharedPreferences
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import com.kakao.sdk.auth.model.OAuthToken
+import com.kakao.sdk.user.UserApiClient
+import com.kakao.sdk.user.model.User
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
-public class LoginViewModel extends AndroidViewModel {
-    private MutableLiveData<Boolean> loginResult = new MutableLiveData<>();
-    private ApiService apiService;
+class LoginViewModel(application: Application?) : AndroidViewModel(application!!) {
+    private val loginResult = MutableLiveData<Boolean>()
+    private val apiService: ApiService
+    private val sharedPreferences: SharedPreferences
 
-    public LoginViewModel(Application application) {
-        super(application);
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://localhost:3000")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-        apiService = retrofit.create(ApiService.class);
+    init {
+        val retrofit = Retrofit.Builder()
+            .baseUrl("http://localhost:3000")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+        apiService = retrofit.create(ApiService::class.java) //Retrofit은 Java의 라이브러리이므로 코틀린 -> 자바 클래스로 변환
+        sharedPreferences = getApplication<Application>().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
     }
 
-    public LiveData<Boolean> getLoginResult() {
-        return loginResult;
+    fun getLoginResult(): LiveData<Boolean> {
+        return loginResult
     }
 
-    public void loginWithKakao() {
-        UserApiClient.getInstance().loginWithKakaoTalk(getApplication(), (OAuthToken token, Throwable error) -> {
+    fun loginWithKakao() {
+        UserApiClient.instance.loginWithKakaoTalk(getApplication<Application>()) { token: OAuthToken?, error: Throwable? ->
             if (error != null) {
-                loginResult.setValue(false);
+                loginResult.value = false
             } else if (token != null) {
-                UserApiClient.getInstance().me((user, meError) -> {
-                    if (meError != null) {
-                        loginResult.setValue(false);
+                UserApiClient.instance.me { user: User?, meError: Throwable? ->
+                    if (meError != null || user == null) {
+                        loginResult.value = false
                     } else {
                         // 백엔드와 통신하여 사용자 정보 전달
-                        sendUserInfoToBackend(user);
+                        sendUserInfoToBackend(user)
                     }
-                    return null;
-                });
+                }
             }
-            return null;
-        });
+        }
     }
 
-    private void sendUserInfoToBackend(User user) {
-        String id = String.valueOf(user.getId());
-        String email = user.getKakaoAccount().getEmail();
-        String nickname = user.getKakaoAccount().getProfile().getNickname();
+    private fun sendUserInfoToBackend(user: User) {
+        val id: String = user.id.toString()
+        val nickname = user.kakaoAccount?.profile?.nickname
 
-        User userInfo = new User(id, email, nickname);
-        Call<LoginResponse> call = apiService.login(userInfo);
 
-        call.enqueue(new Callback<LoginResponse>() {
-            @Override
-            public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    loginResult.setValue(response.body().isSuccess());
+        val call = apiService.login(user)
+
+        call?.enqueue(object : Callback<LoginResponse?> {
+            override fun onResponse(call: Call<LoginResponse?>, response: Response<LoginResponse?>) {
+                if (response.isSuccessful && response.body() != null) {
+                    // 로그인 성공 시 SharedPreferences에 사용자 정보 저장
+                    val editor = sharedPreferences.edit()
+                    editor.putString("id", id) // 사용자의 아이디 저장
+                    editor.putString("nickname", nickname) // 사용자의 닉네임 저장
+                    editor.apply()
+                    loginResult.value = response.body()!!.isSuccess
                 } else {
-                    loginResult.setValue(false);
+                    loginResult.value = false
                 }
             }
 
-            @Override
-            public void onFailure(Call<LoginResponse> call, Throwable t) {
-                loginResult.setValue(false);
+            override fun onFailure(call: Call<LoginResponse?>, t: Throwable) {
+                loginResult.value = false
             }
-        });
+        })
     }
 }
-

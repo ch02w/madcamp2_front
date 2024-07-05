@@ -1,44 +1,39 @@
-package com.example.fridge;
+package com.example.fridge
 
-import android.content.Intent;
-import android.os.Bundle;
-import android.widget.Button;
-import android.widget.Toast;
+import android.content.Intent
+import android.os.Bundle
+import android.view.View
+import android.widget.Button
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
+import com.kakao.sdk.common.KakaoSdk.init
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.Observer;
-import androidx.lifecycle.ViewModelProvider;
+class LoginActivity : AppCompatActivity() {
+    private var btnKakaoLogin: Button? = null
+    private val loginViewModel = ViewModelProvider(this).get(
+        LoginViewModel::class.java
+    )
 
-import com.kakao.sdk.common.KakaoSdk;
-import com.kakao.sdk.user.UserApiClient;
-
-public class LoginActivity extends AppCompatActivity {
-
-    private Button btnKakaoLogin;
-    private final LoginViewModel loginViewModel = new ViewModelProvider(this).get(LoginViewModel.class);
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login);
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_login)
 
         // 카카오 SDK 초기화
-        KakaoSdk.init(this, "1c1884724b665157347d412727279fcb");
+        init(this, "1c1884724b665157347d412727279fcb")
 
-        btnKakaoLogin = findViewById(R.id.btnKakaoLogin);
-        btnKakaoLogin.setOnClickListener(view -> loginViewModel.loginWithKakao());
+        btnKakaoLogin = findViewById(R.id.btnKakaoLogin)
+        btnKakaoLogin?.setOnClickListener { loginViewModel.loginWithKakao() }
 
-        loginViewModel.getLoginResult().observe(this, new Observer<Boolean>() {
-            @Override
-            public void onChanged(Boolean isSuccess) {
-                if (isSuccess) {
-                    Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
-                    startActivity(intent);
-                    finish();
-                } else {
-                    Toast.makeText(LoginActivity.this, "Login Failed", Toast.LENGTH_SHORT).show();
-                }
+        loginViewModel.getLoginResult().observe(this, Observer { isSuccess ->
+            if (isSuccess) {
+                val intent = Intent(this@LoginActivity, HomeActivity::class.java)
+                startActivity(intent)
+                finish()
+            } else {
+                Toast.makeText(this@LoginActivity, "Login Failed", Toast.LENGTH_SHORT).show()
             }
-        });
+        })
     }
 }

@@ -1,4 +1,3 @@
-package com.example.fridge;
+package com.example.fridge
 
-public class HomeActivity {
-}
+class HomeActivity
