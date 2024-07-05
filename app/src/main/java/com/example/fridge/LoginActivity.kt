@@ -12,9 +12,7 @@ import com.kakao.sdk.common.KakaoSdk.init
 
 class LoginActivity : AppCompatActivity() {
     private var btnKakaoLogin: Button? = null
-    private val loginViewModel = ViewModelProvider(this).get(
-        LoginViewModel::class.java
-    )
+    private lateinit var loginViewModel: LoginViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,6 +22,9 @@ class LoginActivity : AppCompatActivity() {
         init(this, "1c1884724b665157347d412727279fcb")
 
         btnKakaoLogin = findViewById(R.id.btnKakaoLogin)
+
+        loginViewModel = ViewModelProvider(this).get(LoginViewModel::class.java)
+
         btnKakaoLogin?.setOnClickListener { loginViewModel.loginWithKakao() }
 
         loginViewModel.getLoginResult().observe(this, Observer { isSuccess ->

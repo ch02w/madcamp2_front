@@ -3,6 +3,7 @@ package com.example.fridge
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -36,10 +37,12 @@ class LoginViewModel(application: Application?) : AndroidViewModel(application!!
     fun loginWithKakao() {
         UserApiClient.instance.loginWithKakaoTalk(getApplication<Application>()) { token: OAuthToken?, error: Throwable? ->
             if (error != null) {
+                Log.e("LoginViewModel", "Login with Kakao failed", error)
                 loginResult.value = false
             } else if (token != null) {
                 UserApiClient.instance.me { user: User?, meError: Throwable? ->
                     if (meError != null || user == null) {
+                        Log.e("LoginViewModel", "Fetching user info failed", meError)
                         loginResult.value = false
                     } else {
                         // 백엔드와 통신하여 사용자 정보 전달
